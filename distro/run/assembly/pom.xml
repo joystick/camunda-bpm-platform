@@ -53,6 +53,20 @@
       </exclusions>
     </dependency>
 
+    <!-- make sure the assembly runs after the webapps module -->
+    <dependency>
+      <groupId>org.camunda.bpm.run</groupId>
+      <artifactId>camunda-bpm-run-modules-webapps</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
     <!-- make sure this runs after the oauth2 module -->
     <dependency>
       <groupId>org.camunda.bpm.run</groupId>

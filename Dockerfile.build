@@ -1,0 +1,23 @@
+FROM eclipse-temurin:21-jdk AS builder
+
+# Maven 3.8.8 (matches .mvn/wrapper)
+ARG MAVEN_VERSION=3.8.8
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/* \
+    && curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+       | tar xz -C /opt \
+    && ln -s /opt/apache-maven-${MAVEN_VERSION}/bin/mvn /usr/local/bin/mvn
+
+# Cache dependencies
+WORKDIR /build
+COPY pom.xml ./
+COPY parent/pom.xml parent/
+COPY bom/pom.xml bom/
+RUN mvn dependency:go-offline -pl parent,bom -N -q 2>/dev/null || true
+
+# Full source
+COPY . .
+
+# Default: skip tests, build distro
+ENV MAVEN_OPTS="-Xmx4g -XX:+UseG1GC"
+ENTRYPOINT ["mvn", "-Dmaven.repo.local=/build/.m2/repository"]
+CMD ["-DskipTests", "-pl", "distro/run", "-am", "install"]

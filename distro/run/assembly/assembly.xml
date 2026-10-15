@@ -130,6 +130,10 @@
       <outputDirectory>internal/rest/</outputDirectory>
     </fileSet>
     <fileSet>
+      <directory>../modules/webapps/target/dependency/</directory>
+      <outputDirectory>internal/webapps/</outputDirectory>
+    </fileSet>
+    <fileSet>
       <directory>../modules/oauth2/target/dependency/</directory>
       <outputDirectory>internal/oauth2/</outputDirectory>
     </fileSet>
