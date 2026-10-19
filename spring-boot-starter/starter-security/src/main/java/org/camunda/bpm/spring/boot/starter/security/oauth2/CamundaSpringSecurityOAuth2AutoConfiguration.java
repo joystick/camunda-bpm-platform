@@ -24,7 +24,9 @@ import org.camunda.bpm.engine.spring.SpringProcessEngineServicesConfiguration;
 import org.camunda.bpm.spring.boot.starter.CamundaBpmAutoConfiguration;
 import org.camunda.bpm.spring.boot.starter.property.CamundaBpmProperties;
 import org.camunda.bpm.spring.boot.starter.property.WebappProperty;
+import org.camunda.bpm.engine.IdentityService;
 import org.camunda.bpm.spring.boot.starter.security.oauth2.impl.AuthorizeTokenFilter;
+import org.camunda.bpm.spring.boot.starter.security.oauth2.impl.CamundaFormLoginAuthenticationProvider;
 import org.camunda.bpm.spring.boot.starter.security.oauth2.impl.OAuth2AuthenticationProvider;
 import org.camunda.bpm.spring.boot.starter.security.oauth2.impl.OAuth2GrantedAuthoritiesMapper;
 import org.camunda.bpm.spring.boot.starter.security.oauth2.impl.OAuth2IdentityProviderPlugin;
@@ -109,6 +111,12 @@ public class CamundaSpringSecurityOAuth2AutoConfiguration {
   }
 
   @Bean
+  public CamundaFormLoginAuthenticationProvider camundaFormLoginAuthenticationProvider(IdentityService identityService) {
+    logger.debug("Registering CamundaFormLoginAuthenticationProvider");
+    return new CamundaFormLoginAuthenticationProvider(identityService);
+  }
+
+  @Bean
   protected AuthorizeTokenFilter authorizeTokenFilter(OAuth2AuthorizedClientManager clientManager) {
     logger.debug("Registering AuthorizeTokenFilter");
     return new AuthorizeTokenFilter(clientManager);
@@ -117,12 +125,14 @@ public class CamundaSpringSecurityOAuth2AutoConfiguration {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http,
                                          AuthorizeTokenFilter authorizeTokenFilter,
+                                         CamundaFormLoginAuthenticationProvider formLoginAuthProvider,
                                          @Nullable SsoLogoutSuccessHandler ssoLogoutSuccessHandler) throws Exception {
 
     logger.info("Enabling Camunda Spring Security oauth2 integration");
 
     // @formatter:off
-    http.authorizeHttpRequests(c -> c
+    http.authenticationProvider(formLoginAuthProvider)
+        .authorizeHttpRequests(c -> c
             .requestMatchers(webappPath + "/app/**").authenticated()
             .requestMatchers(webappPath + "/api/**").authenticated()
             .anyRequest().permitAll()
@@ -131,6 +141,7 @@ public class CamundaSpringSecurityOAuth2AutoConfiguration {
         .anonymous(AbstractHttpConfigurer::disable)
         .oidcLogout(c -> c.backChannel(Customizer.withDefaults()))
         .oauth2Login(Customizer.withDefaults())
+        .formLogin(Customizer.withDefaults())
         .logout(c -> c
             .clearAuthentication(true)
             .invalidateHttpSession(true)
