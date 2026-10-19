@@ -53,15 +53,15 @@
   <ul cam-if-logged-in
       ng-controller="NavigationController">
 
-    <li ng-class="activeClass('#/user')">
+    <li ng-if="!$root.isOidcUser" ng-class="activeClass('#/user')">
       <a href="#/users">{{ 'USERS_USERS' | translate }}</a>
     </li>
 
-    <li ng-class="activeClass('#/group')">
+    <li ng-if="!$root.isOidcUser" ng-class="activeClass('#/group')">
       <a href="#/groups">{{ 'GROUPS_GROUPS' | translate }}</a>
     </li>
 
-    <li ng-class="activeClass('#/tenant')">
+    <li ng-if="!$root.isOidcUser" ng-class="activeClass('#/tenant')">
       <a href="#/tenants">{{ 'TENANTS_TENANTS' | translate }}</a>
     </li>
 
