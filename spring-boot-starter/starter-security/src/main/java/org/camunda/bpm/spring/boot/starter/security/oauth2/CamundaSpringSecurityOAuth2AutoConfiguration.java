@@ -25,6 +25,7 @@ import org.camunda.bpm.spring.boot.starter.CamundaBpmAutoConfiguration;
 import org.camunda.bpm.spring.boot.starter.property.CamundaBpmProperties;
 import org.camunda.bpm.spring.boot.starter.property.WebappProperty;
 import org.camunda.bpm.engine.IdentityService;
+import org.camunda.bpm.spring.boot.starter.security.oauth2.impl.AuthInfoController;
 import org.camunda.bpm.spring.boot.starter.security.oauth2.impl.AuthorizeTokenFilter;
 import org.camunda.bpm.spring.boot.starter.security.oauth2.impl.CamundaFormLoginAuthenticationProvider;
 import org.camunda.bpm.spring.boot.starter.security.oauth2.impl.OAuth2AuthenticationProvider;
@@ -49,11 +50,16 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 
+import java.util.List;
 import java.util.Map;
 
 @AutoConfigureOrder(CamundaSpringSecurityOAuth2AutoConfiguration.CAMUNDA_OAUTH2_ORDER)
@@ -111,6 +117,11 @@ public class CamundaSpringSecurityOAuth2AutoConfiguration {
   }
 
   @Bean
+  public AuthInfoController authInfoController() {
+    return new AuthInfoController();
+  }
+
+  @Bean
   public CamundaFormLoginAuthenticationProvider camundaFormLoginAuthenticationProvider(IdentityService identityService) {
     logger.debug("Registering CamundaFormLoginAuthenticationProvider");
     return new CamundaFormLoginAuthenticationProvider(identityService);
@@ -130,13 +141,32 @@ public class CamundaSpringSecurityOAuth2AutoConfiguration {
 
     logger.info("Enabling Camunda Spring Security oauth2 integration");
 
+    List<String> adminEmails = oAuth2Properties.getAdminEmails();
+
     // @formatter:off
     http.authenticationProvider(formLoginAuthProvider)
-        .authorizeHttpRequests(c -> c
-            .requestMatchers(webappPath + "/app/**").authenticated()
-            .requestMatchers(webappPath + "/api/**").authenticated()
-            .anyRequest().permitAll()
-        )
+        .authorizeHttpRequests(c -> {
+            if (!adminEmails.isEmpty()) {
+              c.requestMatchers(webappPath + "/app/admin/**", webappPath + "/api/admin/**")
+                  .access((authentication, context) -> {
+                    Authentication auth = authentication.get();
+                    if (auth instanceof OAuth2AuthenticationToken) {
+                      Object principal = ((OAuth2AuthenticationToken) auth).getPrincipal();
+                      if (principal instanceof OidcUser) {
+                        String email = ((OidcUser) principal).getEmail();
+                        return new AuthorizationDecision(
+                            email != null && adminEmails.stream()
+                                .anyMatch(e -> e.equalsIgnoreCase(email)));
+                      }
+                      return new AuthorizationDecision(false);
+                    }
+                    return new AuthorizationDecision(true);
+                  });
+            }
+            c.requestMatchers(webappPath + "/app/**").authenticated()
+                .requestMatchers(webappPath + "/api/**").authenticated()
+                .anyRequest().permitAll();
+        })
         .addFilterAfter(authorizeTokenFilter, OAuth2AuthorizationRequestRedirectFilter.class)
         .anonymous(AbstractHttpConfigurer::disable)
         .oidcLogout(c -> c.backChannel(Customizer.withDefaults()))

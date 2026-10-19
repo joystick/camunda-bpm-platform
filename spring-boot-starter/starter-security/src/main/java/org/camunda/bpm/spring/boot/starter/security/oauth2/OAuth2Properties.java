@@ -21,6 +21,9 @@ import org.camunda.bpm.spring.boot.starter.security.oauth2.impl.OAuth2IdentityPr
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @ConfigurationProperties(OAuth2Properties.PREFIX)
 public class OAuth2Properties {
 
@@ -37,6 +40,12 @@ public class OAuth2Properties {
    */
   @NestedConfigurationProperty
   private OAuth2IdentityProviderProperties identityProvider = new OAuth2IdentityProviderProperties();
+
+  /**
+   * List of OIDC user emails allowed to access the admin webapp.
+   * Empty list means all authenticated OIDC users can access admin.
+   */
+  private List<String> adminEmails = new ArrayList<>();
 
   public static class OAuth2SSOLogoutProperties {
     /**
@@ -121,5 +130,13 @@ public class OAuth2Properties {
 
   public void setIdentityProvider(OAuth2IdentityProviderProperties identityProvider) {
     this.identityProvider = identityProvider;
+  }
+
+  public List<String> getAdminEmails() {
+    return adminEmails;
+  }
+
+  public void setAdminEmails(List<String> adminEmails) {
+    this.adminEmails = adminEmails;
   }
 }

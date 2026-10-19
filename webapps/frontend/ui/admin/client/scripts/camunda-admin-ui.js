@@ -154,15 +154,36 @@ export function init(pluginDependencies) {
   appNgModule.controller('camAdminAppCtrl', [
     '$scope',
     '$route',
+    '$http',
+    '$rootScope',
     'camAPI',
-    function($scope, $route, camAPI) {
+    function($scope, $route, $http, $rootScope, camAPI) {
       var userService = camAPI.resource('user');
+
+      $rootScope.isOidcUser = false;
+      $rootScope.authInfoLoaded = false;
+
+      function fetchAuthInfo() {
+        $http
+          .get('/api/oidc/auth-info')
+          .then(function(response) {
+            $rootScope.isOidcUser = response.data.authType === 'oauth2';
+          })
+          .catch(function() {
+            $rootScope.isOidcUser = false;
+          })
+          .finally(function() {
+            $rootScope.authInfoLoaded = true;
+          });
+      }
 
       function getUserProfile(auth) {
         if (!auth || !auth.name) {
           $scope.userFullName = null;
           return;
         }
+
+        fetchAuthInfo();
 
         userService.profile(auth.name, function(err, info) {
           if (!err) {

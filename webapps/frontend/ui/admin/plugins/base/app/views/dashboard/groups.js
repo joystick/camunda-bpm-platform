@@ -47,6 +47,22 @@ module.exports = [
           });
         }
       ],
+      access: [
+        '$rootScope',
+        function($rootScope) {
+          return function(cb) {
+            if ($rootScope.authInfoLoaded) {
+              return cb(null, !$rootScope.isOidcUser);
+            }
+            var unwatch = $rootScope.$watch('authInfoLoaded', function(loaded) {
+              if (loaded) {
+                unwatch();
+                cb(null, !$rootScope.isOidcUser);
+              }
+            });
+          };
+        }
+      ],
       priority: 0
     });
   }
