@@ -51,7 +51,7 @@ async function testOAuthFlow(browserType: string, launchFn: () => Promise<Browse
   console.log('\n[Test 5] GET https://bpmn.fs-holding.com/engine-rest/engine (basic auth)');
   const authContext = await browser.newContext({
     ignoreHTTPSErrors: true,
-    httpCredentials: { username: 'hello', password: 'blablabla123' },
+    httpCredentials: { username: process.env.CAMUNDA_USER ?? 'hello', password: process.env.CAMUNDA_PASS ?? 'test' },
   });
   const authPage = await authContext.newPage();
   const resp5 = await authPage.goto('https://bpmn.fs-holding.com/engine-rest/engine', { waitUntil: 'networkidle', timeout: 15000 });

@@ -51,7 +51,7 @@ public class CamundaFormLoginAuthenticationProvider implements AuthenticationPro
         .map(g -> new SimpleGrantedAuthority("ROLE_" + g.getId().toUpperCase()))
         .collect(Collectors.toList());
 
-    return new UsernamePasswordAuthenticationToken(username, password, authorities);
+    return new UsernamePasswordAuthenticationToken(username, null, authorities);
   }
 
   @Override
