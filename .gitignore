@@ -24,3 +24,5 @@ camunda-h2-dbs
 
 *.DS_Store
 .m2/
+handoff/
+plans/
