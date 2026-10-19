@@ -1,12 +1,14 @@
 import { chromium } from 'playwright';
 
+const BASE_URL = process.env.CAMUNDA_BASE_URL ?? 'http://localhost:8080';
+
 (async () => {
   const browser = await chromium.launch();
 
   // Test 1: Login page has both form and Google link
   console.log('=== Test 1: Login page ===');
   const page1 = await browser.newPage();
-  await page1.goto('http://localhost:8080/login', { waitUntil: 'networkidle' });
+  await page1.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
   const hasForm = await page1.locator('input[name="username"]').count();
   const hasPassword = await page1.locator('input[name="password"]').count();
   const hasGoogle = await page1.locator('a:has-text("Google")').count();
@@ -19,7 +21,7 @@ import { chromium } from 'playwright';
   console.log('\n=== Test 2: Form login (correct) ===');
   const ctx2 = await browser.newContext();
   const page2 = await ctx2.newPage();
-  await page2.goto('http://localhost:8080/login');
+  await page2.goto(`${BASE_URL}/login`);
   await page2.fill('input[name="username"]', 'hello');
   await page2.fill('input[name="password"]', 'hello123');
   await page2.click('button[type="submit"]');
@@ -30,7 +32,7 @@ import { chromium } from 'playwright';
 
   // Navigate to welcome page
   if (!isError) {
-    await page2.goto('http://localhost:8080/camunda/app/welcome/default/', { waitUntil: 'networkidle', timeout: 10000 });
+    await page2.goto(`${BASE_URL}/camunda/app/welcome/default/`, { waitUntil: 'networkidle', timeout: 10000 });
     console.log(`  Welcome URL: ${page2.url()}`);
     const hasCockpit = await page2.locator('text=Cockpit').count();
     const hasAdmin = await page2.locator('text=Admin').count();
@@ -43,7 +45,7 @@ import { chromium } from 'playwright';
   console.log('\n=== Test 3: Form login (wrong password) ===');
   const ctx3 = await browser.newContext();
   const page3 = await ctx3.newPage();
-  await page3.goto('http://localhost:8080/login');
+  await page3.goto(`${BASE_URL}/login`);
   await page3.fill('input[name="username"]', 'hello');
   await page3.fill('input[name="password"]', 'wrongpassword');
   await page3.click('button[type="submit"]');
@@ -56,7 +58,7 @@ import { chromium } from 'playwright';
   console.log('\n=== Test 4: Google OAuth redirect ===');
   const ctx4 = await browser.newContext();
   const page4 = await ctx4.newPage();
-  await page4.goto('http://localhost:8080/login');
+  await page4.goto(`${BASE_URL}/login`);
   const googleLink = page4.locator('a:has-text("Google")');
   const href = await googleLink.getAttribute('href');
   console.log(`  Google link href: ${href}`);
